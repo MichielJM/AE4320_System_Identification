@@ -4,11 +4,13 @@
 %   Author: M.J. Mollema (adapted from original by C.C. de Visser, Delft
 %   University of Technology, 2013)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function zpred = kf_calcHx(t, x, u)
+function zpred = kf_calcHx(t, x, U)
     
+    u = x(1); v = x(2); w = x(3); C = x(4);
+
     zpred = zeros(3, 1);
     
     % output dynamics go here!
-    zpred(1) = atan(x(1) / x(2)) * (1 + x(4));
-    zpred(2) = atan(x(2) / sqrt(x(1)^2 + x(2)^2));
-    zpred(3) = sqrt(x(1)^2 + x(2)^2 + x(3)^2);
+    zpred(1) = atan(w / u) * (1 + C);
+    zpred(2) = atan(v / sqrt(u^2 + v^2));
+    zpred(3) = sqrt(u^2 + v^2 + w^2);

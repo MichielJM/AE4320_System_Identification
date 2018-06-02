@@ -1,5 +1,6 @@
 *.png
 *.jpeg
 *.zip
-Kalman_Filter_demo/
-Parameter_Estimation_demo/
+/example_code
+/data
+*.m~

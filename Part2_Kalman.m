@@ -8,17 +8,24 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 close all
 
+%% Load data
+filename = 'data/F16traindata_CMabV_2018';
+load(filename, 'Cm', 'Z_k', 'U_k');
+
+% transpose
+Cm = Cm'; Z_k = Z_k'; U_k = U_k';
+
 %% Set simulation parameters
 dt              = 0.01;
-N               = 1000;
+N               = size(U_k, 2);
 epsilon         = 1e-10;
 doIEKF          = 1;
 maxIterations   = 100;
 
 %% Set initial values for states and statistics
-Ex_0    = [100; 0; 0; 1];
+Ex_0    = [Z_k(3, 1); 0; 0; 1]; % Set initial u to Vtot
 x_0     = [90; -1; 1; 2];
-m       = 4;
+m       = length(Ex_0);
 
 % Initial estimate for covariance matrix
 stdx_0  = [10, 10, 10, 10];
@@ -43,18 +50,18 @@ B = eye(m);
 
 %% Calculate batch with measurement data
 % Real simulated state-variable and measurements data
-x   = x_0;
-X_k = zeros(n, N);
-Z_k = zeros(nm, N);
-U_k = zeros(m, N);
+% x   = x_0;
+% X_k = zeros(n, N);
+% Z_k = zeros(nm, N);
+% U_k = zeros(m, N);
 
-for i = 1:N
-    dx  = kf_calc_f(0, x, U_k(:,i));
-    x   = x + (dx + w_k(:,i)) * dt;
-    
-    X_k(:,i) = x;
-    Z_k(:,i) = kf_calc_h(0, x, U_k(:,i)) + v_k(:,i);
-end
+% for i = 1:N
+%     dx  = kf_calc_f(0, x, U_k(:,i));
+%     x   = x + (dx + w_k(:,i)) * dt;
+%     
+%     X_k(:,i) = x;
+%     Z_k(:,i) = kf_calc_h(0, x, U_k(:,i)) + v_k(:,i);
+% end
 
 XX_k1k1     = zeros(n, N);
 PP_k1k1     = zeros(n, N);
@@ -82,8 +89,8 @@ for k = 1:N
     z_pred(:,k) = z_kk_1;
     
     % Calculate Phi(k+1|k) and Gamma(k+1|k) (discretization)
-    Fx          = kf_calc_Fx(0, x, U_k(:,k)); % Jacobian of f(x,u)
-    [~, Psi]    = c2d(Fx, B, dt);
+    Fx          = kf_calc_Fx(0, x_kk_1, U_k(:,k)); % Jacobian of f(x,u)
+%     [~, Psi]    = c2d(Fx, B, dt);
     [Phi, Gamma]= c2d(Fx, G, dt);
     
     % Covariance matrix of prediction P(k+1|k)
@@ -112,19 +119,16 @@ for k = 1:N
             
             % Check observability of the states
             if (k == 1 && itts == 1)
-                rankHF = kf_calcObsRank(Hx, Fx);
-                if (rankHF < n)
-                    warning('The current state is not observable; rank of Observability Matrix is %d, should be %d', rankHF, n);
-                end
+                check_observability
             end
             
-                        % The innovation matrix
-            Ve  = (Hx*P_kk_1*Hx' + R);
+            % The innovation matrix
+            Ve  = (Hx * P_kk_1 * Hx' + R);
 
             % calculate the Kalman gain matrix
             K       = P_kk_1 * Hx' / Ve;
             % new observation state
-            z_p     = kf_calc_h(0, eta1, U_k(:,k)) ;%fpr_calcYm(eta1, u);
+            z_p     = kf_calc_h(0, eta1, U_k(:,k)) ;
 
             eta2    = x_kk_1 + K * (Z_k(:,k) - z_p - Hx*(x_kk_1 - eta1));
             err     = norm((eta2 - eta1), inf) / norm(eta1, inf);
@@ -156,130 +160,13 @@ for k = 1:N
     
     % store results
     XX_k1k1(:,k) = x_k_1k_1;
-%     PP_k1k1(k,:) = P_k_1k_1;
+    PP_k1k1(:,k) = diag(P_k_1k_1);
     STDx_cor(:,k) = stdx_cor;
 end
 
-time2 = toc;
+% Correct alpha for bias using estimate bias
+alpha = z_pred(1, :);
+alpha_corr = alpha ./ (1 + XX_k1k1(4, :));
 
-% calculate state estimation error (in real life this is unknown!)
-EstErr = (XX_k1k1-X_k);
-
-fprintf('IEKF state estimation error RMS = %d, completed run with %d samples in %2.2f seconds.\n', sqrt(mse(EstErr)), N, time2);
-
-
-%% 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Plotting
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-close all;
-
-plotID = 1000;
-figure(plotID);
-set(plotID, 'Position', [1 550 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-hold on;
-plot(X_k(1,:), 'b');
-plot(X_k(2,:), 'b--');
-plot(Z_k(1,:), 'k');
-% plot(Z_k(2,:), 'k--');
-title('True state (blue) and Measured state (black)');
-if (printfigs == 1)
-    fpath = sprintf('fig_demoKFStateMeasurement');
-    savefname = strcat(figpath, fpath);
-    print(plotID, '-dpng', '-r300', savefname);
-end
-
-
-plotID = 1001;
-figure(plotID);
-set(plotID, 'Position', [1 100 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-hold on;
-plot(X_k(1,:), 'b');
-plot(X_k(2,:), 'b--');
-plot(XX_k1k1(1,:), 'r');
-plot(XX_k1k1(2,:), 'r--');
-title('True state (blue) and Estimated state (red)');
-if (printfigs == 1)
-    fpath = sprintf('fig_demoKFStateEstimates');
-    savefname = strcat(figpath, fpath);
-    print(plotID, '-dpng', '-r300', savefname);
-end
-
-
-
-plotID = 2001;
-figure(plotID);
-set(plotID, 'Position', [800 100 600 600], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-subplot(2, 1, 1);
-plot(EstErr(1,:), 'b');
-title('State 1 estimation error');
-subplot(2, 1, 2);
-plot(EstErr(2,:), 'b');
-title('State 2 estimation error');
-if (printfigs == 1)
-    fpath = sprintf('fig_demoKFStatesEstimateErrors');
-    savefname = strcat(figpath, fpath);
-    print(plotID, '-dpng', '-r300', savefname);
-end
-
-plotID = 2002;
-figure(plotID);
-set(plotID, 'Position', [800 550 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-subplot(2, 1, 1);
-plot(EstErr(1,:), 'b');
-axis([0 50 min(EstErr(1,:)) max(EstErr(1,:))]);
-title('State 1 estimation error (Zoomed in)');
-subplot(2, 1, 2);
-plot(EstErr(2,:), 'b');
-axis([0 50 min(EstErr(2,:)) max(EstErr(2,:))]);
-title('State 2 estimation error (Zoomed in)');
-if (printfigs == 1)
-    fpath = sprintf('fig_demoKFStatesEstimateErrorsZoom');
-    savefname = strcat(figpath, fpath);
-    print(plotID, '-dpng', '-r300', savefname);
-end
-
-
-% plotID = 2003;
-% figure(plotID);
-% set(plotID, 'Position', [1000 100 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-% hold on;
-% plot(EstErr, 'b');
-% plot(STDx_cor, 'r');
-% plot(-STDx_cor, 'g');
-% legend('Estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
-% title('State estimation error with STD of Innovation');
-% if (printfigs == 1)
-%     fpath = sprintf('fig_demoKFStatesEstimatesMeasurements');
-%     savefname = strcat(figpath, fpath);
-%     print(plotID, '-dpng', '-r300', savefname);
-% end
-% 
-% 
-% plotID = 2004;
-% figure(plotID);
-% set(plotID, 'Position', [1000 550 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-% hold on;
-% plot(EstErr, 'b');
-% plot(STDx_cor, 'r');
-% plot(-STDx_cor, 'g');
-% axis([0 50 min(EstErr) max(EstErr)]);
-% title('State estimation error');
-% legend('Estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
-% if (printfigs == 1)
-%     fpath = sprintf('fig_demoKFStatesEstimatesMeasurements');
-%     savefname = strcat(figpath, fpath);
-%     print(plotID, '-dpng', '-r300', savefname);
-% end
-
-plotID = 3001;
-figure(plotID);
-set(plotID, 'Position', [1 700 600 300], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-hold on;
-plot(IEKFitcount, 'b');
-title('IEKF iterations at each sample');
-if (printfigs == 1)
-    fpath = sprintf('fig_demoKFStatesEstimatesMeasurements');
-    savefname = strcat(figpath, fpath);
-    print(plotID, '-dpng', '-r300', savefname);
-end
+%% Plotting
+F16_PlotData

@@ -1,23 +1,11 @@
-%F16_IOmapping.m
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Function to plot relevant data from KF
 %
-%   Description:
-%       This file shows how load and plot the IO mapping of the F16 aerodynamic coefficient C_m.
-%
-%   Construction date:  17-06-2009
-%   Last updated:       23-03-2015
-%
-%   C.C. de Visser
-%   TUDelft, Faculty of Aerospace Engineering, Division of Control &
-%   Simulation
-%
-%   E. de Weerdt
-%   TUDelft, Faculty of Aerospace Engineering, ASTI & Control and
-%   Simulation Division
-%   
-%   Adapted by M.J. Mollema
+% Author: M.J. Mollema
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function [] = KF_plotting(printfigs, Z_k, z_pred, z_pred_corr, t)
 %% Settings
-printfigs = 1; % 1: print figures to disk as PNG
 figpath = 'data/'; % set the path where the figures will be printed
 
 %% Set variable names
@@ -33,56 +21,50 @@ Vtot_KF = z_pred(3, :);
 
 % Bias corrected (only alpha has bias)
 alpha_corr = z_pred_corr(1, :);
-% beta_corr = z_pred_corr(2, :);
-% Vtot_corr = z_pred_corr(3, :);
+beta_corr = z_pred_corr(2, :); % = beta_KF
+Vtot_corr = z_pred_corr(3, :); % = Vtot_KF
 
 %%   Plotting results
-%---------------------------------------------------------
-% creating triangulation (only used for plotting here)
-% TRIeval = delaunayn(Z_k(:, [1 2]));
 
-%   viewing angles
-az = 140;
-el = 36;
-
-% create figures
+% Alpha vs Beta
 plotID = 101;
-% set(plotID, 'DefaultFigurePosition',[0 100 900 500] )
 figure(plotID);
 set(plotID, 'Position', [150 150 720 800], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'color', [1 1 1], 'PaperPositionMode', 'auto');
-% plot data points
-plot(alpha_m, beta_m, 'r', alpha_KF, beta_KF, 'b', alpha_corr, beta_KF, 'g'); % note that alpha_m = alpha, beta_m = beta, y = Cm
+plot(alpha_m, beta_m, 'r', alpha_KF, beta_KF, 'b', alpha_corr, beta_KF, 'g');
 view(0, 90); 
 ylabel('beta [rad]');
 xlabel('alpha [rad]');
-% zlabel('C_m [-]');
 title('F16 CM(\alpha_m, \beta_m)');
 % print results to disk if printfigs = 1
 if (printfigs == 1)
-    fpath = sprintf('fig_F16data3D');
+    fpath = sprintf('fig_alpha_vs_beta');
     savefname = strcat(figpath, fpath);
     print(plotID, '-dpng', '-r300', savefname);
     fprintf('Printed figure to <%s>\n', savefname);
 end
 
-% % Alpha vs time
-% plotID = 102;
-% figure(plotID); hold on;
-% plot(t, alpha_m, 'r')
-% plot(t, alpha_KF, 'b')
-% plot(t, alpha_corr, 'k')
 
-% % Beta vs time
-% plotID = 103;
-% figure(plotID); hold on;
-% plot(t, beta_m, 'r');
-% plot(t, beta_KF, 'b');
+% Alpha vs time
+subplot(3, 1, 1); hold on;
+plot(t, alpha_m, 'r')
+plot(t, alpha_KF, 'b')
+plot(t, alpha_corr, 'k')
+xlabel('Time [sec]');
+ylabel('Alpha [rad]');
 
-% % V_tot vs time
-plotID = 104;
-figure(plotID); hold on;
+% Beta vs time
+subplot(3, 1, 2); hold on;
+plot(t, beta_m, 'r');
+plot(t, beta_KF, 'b');
+xlabel('Time [sec]');
+ylabel('Beta [rad]');
+
+% V_tot vs time
+subplot(3 ,1, 3); hold on;
 plot(t, Vtot_m, 'r');
 plot(t, Vtot_KF, 'b');
+xlabel('Time [sec]');
+ylabel('Vtot [m/s]');
 
 % plotID = 1001;
 % figure(plotID);

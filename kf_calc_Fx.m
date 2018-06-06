@@ -7,4 +7,5 @@
 function DFx = kf_calcDFx(t, x, u)
 
     % Calculate Jacobian matrix of system dynamics
-    DFx = zeros(length(x), length(x));
+%     DFx = zeros(length(x), length(x));
+DFx = zeros(4);

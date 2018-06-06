@@ -12,5 +12,5 @@ function zpred = kf_calcHx(t, x, U)
     
     % output dynamics go here!
     zpred(1) = atan(w / u) * (1 + C);
-    zpred(2) = atan(v / sqrt(u^2 + v^2));
+    zpred(2) = atan(v / sqrt(u^2 + w^2));
     zpred(3) = sqrt(u^2 + v^2 + w^2);

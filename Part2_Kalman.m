@@ -8,7 +8,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 close all, clc, clear all
 printfigs = 0;
-showfigs = 0;
+showfigs = 1;
 
 %% Load data and set noise statistics
 filename = 'data/F16traindata_CMabV_2018';
@@ -36,40 +36,22 @@ check_observability
 z_pred_corr = z_pred;
 z_pred_corr(1, :) = z_pred_corr(1, :) ./ (1 + XX_k1k1(4, :));
 
-%% Plotting
+%% Plotting KF
 if showfigs
     KF_plotting(printfigs, Z_k, z_pred, z_pred_corr, t)
 end
+
 %% Ordinary least squares estimator
-% Steps:
-% 1 Obtain measurement data
-% 2 Formulate linear regression model structure
-% 3 Formulate regression matrix
-% 4 Formulate least squares estimator
-% 5 Evaluate/validate model
+% Get theta
+[Ax, theta_OLS] = OLS(z_pred_corr, Cm, 5);
 
-% Step 1
-alpha = z_pred_corr(1, :);
-beta = z_pred_corr(2, :);
-Cm = Cm;
+% Estimate Cm
+Cm_est = Ax * theta_OLS;
 
-% Step 2: p(x,theta) = A(x) * theta
-order = 1;
-% order_x = 1;
-% order_y = 1;
-
-% Step 3: A(x)
-sz_A = 0.5*order^2 + 1.5*order + 1;
-Ax = zeros(size(z_pred, 2), sz_A);
-for i = 1:size(z_pred, 2)
-    Ax(i, :) = [1, alpha(i), beta(i)];
+%%   Plotting OLS
+if showfigs
+    OLS_plotting(z_pred_corr, Cm, Cm_est, printfigs)
 end
-
-% Step 4: theta_OLS
-theta_OLS = (Ax' * Ax)^(-1) * Ax' * Cm'; %Cm' to get size (datapoints, 1)
-
-
-
 
 
 

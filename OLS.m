@@ -13,7 +13,8 @@
 
 function [Ax, theta] = OLS(X, Y, order)
 
-Ax = create_regression_matrix(X(1:2, :), order);
+Ax = create_regression_matrix(X(:, 1:3), order);
 
-theta = pinv(Ax' * Ax) * Ax' * Y'; %Y' to get size (datapoints, 1)
+theta = pinv(Ax' * Ax) * Ax' * Y; %Y' to get size (datapoints, 1)
+% theta = pinv(Ax) * Y;
 end

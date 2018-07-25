@@ -11,7 +11,7 @@ function A = create_regression_matrix(X, order)
 %
 % M.J. Mollema (adapted from: Jesse Hagenaars - 06.05.2018)
 
-N_states = size(X, 1);
+N_states = size(X, 2);
 
 exponentials = zeros(1, N_states);
 
@@ -24,6 +24,6 @@ for d = 1:order
 end
 
 % Create regression matrix using MATLAB's x2fx
-A = x2fx(X', exponentials);
+A = x2fx(X, exponentials);
 
 end

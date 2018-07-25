@@ -11,14 +11,14 @@
 function [] = OLS_plotting(Z, Y, Y_est, printfigs)
 
 % Get data
-alpha = Z(1, :);
-beta = Z(2,:);
-Vtot = Z(3, :);
+alpha = Z(:, 1);
+beta = Z(:, 2);
+% Vtot = Z(:, 3);
 Cm = Y;
 Cm_est = Y_est;
 
 % creating triangulation (only used for plotting here)
-TRIeval = delaunayn(Z([1 2], :)');
+TRIeval = delaunayn(Z(:, [1 2]));
 
 %   viewing angles
 az = 140;
@@ -27,11 +27,11 @@ el = 36;
 plotID = 1001;
 figure(plotID);
 set(plotID, 'Position', [800 100 900 500], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'color', [1 1 1], 'PaperPositionMode', 'auto');
-trisurf(TRIeval, alpha', beta', Cm_est, 'EdgeColor', 'none'); 
+trisurf(TRIeval, alpha, beta, Cm_est, 'EdgeColor', 'none'); 
 grid on;
 hold on;
 % plot data points
-plot3(alpha', beta', Cm, '.k'); % note that alpha_m = alpha, beta_m = beta, y = Cm
+plot3(alpha, beta, Cm, '.k'); % note that alpha_m = alpha, beta_m = beta, y = Cm
 view(az, el);
 ylabel('beta [rad]');
 xlabel('alpha [rad]');

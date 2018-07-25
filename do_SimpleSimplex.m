@@ -8,7 +8,7 @@ X_val   = X(1:2:end, 1:2);
 Y_id    = Y(2:2:end);
 Y_val   = Y(1:2:end);
 
-order = 20;
+% order = 20;
 
 % Define vertices
 V_x = [1.5; -0.2; -0.2];
@@ -27,7 +27,7 @@ exponentials    = gen_exp(3, order);
 sorted_B        = x2fx(BaryC, exponentials);
 
 % Perform OLS to determine B-coefficients
-c_OLS = pinv(sorted_B' * sorted_B) * sorted_B' * Y_id;
+c_OLS = inv(sorted_B' * sorted_B) * sorted_B' * Y_id;
 
 %% Model evaluation
 [IMap, BaryC_val]   = tsearchn(V, TRI, X_val);

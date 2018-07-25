@@ -9,7 +9,10 @@ close all, clc, clear all
 printfigs = 0;
 showfigs = 0;
 interpolation_order = 3;
-simple_spline_order = 2;
+simple_simplex_order = 2;
+spline_poly_order   = 2;
+spline_cont_order   = 1;
+num_simplices       = 2;
 
 %% Load data and set noise statistics
 filename = 'data/F16traindata_CMabV_2018';
@@ -98,7 +101,10 @@ acx_norm = acx ./ max(acx, 1);
 % perc_inside     = inside_bounds / length(acx) * 100
 
 %% Perform single simplex polynomial
-do_SimpleSimplex(X, Y, simple_spline_order)
+do_SimpleSimplex(X, Y, simple_simplex_order)
+
+%% Perform compplete simplex splines
+do_CompleteSimplex(X, Y, spline_poly_order, spline_cont_order, num_simplices)
 
 
 

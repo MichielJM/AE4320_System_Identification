@@ -53,10 +53,11 @@ edgess      = edges(tri);
 boundary    = freeBoundary(tri);
 int_edges   = setdiff(edgess, [boundary; fliplr(boundary)], 'rows'); % Find only interior edges
 num_cont_equations = sum(spline_poly_order+1 : -1 : spline_poly_order - spline_cont_order + 1);
-H = zeros(num_cont_equations, size(c_OLS_coeff, 1));
+% H = zeros(num_cont_equations * size(int_edges, 1), size(c_OLS_coeff, 1));
+H = [];
 
 for order = 0 : spline_cont_order
-    
+    order
     for i = 1 : size(int_edges, 1)
         
         % Find triangles and their out-of-edge vertices connected to current edge
@@ -74,9 +75,10 @@ for order = 0 : spline_cont_order
         vertex_bary_22  = cartesianToBarycentric(tri, triangle_IDs{1}(2), vertex_cart_2);        
         
         % Left hand part (see lecture 6, slide 76 and onwards for steps)
-        single_nonzero_loc = find(vertex_bary_11 == 1);
+        single_nonzero_loc_1 = find(vertex_bary_11 == 1);
+        single_nonzero_loc_2 = find(vertex_bary_22 == 1);
         exponentials = gen_exp(3, spline_poly_order);
-        indices      = exponentials(:, single_nonzero_loc) == order;  %TODO: MAKE THIS VALUE DEPENDENT ON THE SINGLE NONZERO VALUE OF OUT OF EDGE VERTEX
+        indices      = exponentials(:, single_nonzero_loc_1) == order;  %TODO: MAKE THIS VALUE DEPENDENT ON THE SINGLE NONZERO VALUE OF OUT OF EDGE VERTEX
         LH_part      = exponentials(indices, :);
         
         % Gamma permutations
@@ -88,16 +90,34 @@ for order = 0 : spline_cont_order
         % and create continuity matrix H
         for j = 1:size(LH_part, 1)
             
-            LH_part(:, single_nonzero_loc) = 0; % Set second value to 0 (as specified in slide 78) TODO: MAKE THIS VALUE DEPENDENT ON THE SINGLE NONZERO VALUE OF OUT OF EDGE VERTEX
-            LH = LH_part(j, :);
-            RH = LH + gamma;
+            % Get k0 and k1 from left hand part
+            ks = LH_part(j, :);
+            ks(:, single_nonzero_loc_1) = [];
+            RH = zeros(1, 3);
+            if single_nonzero_loc_2 == 1
+                RH(2:3) = ks;
+            elseif single_nonzero_loc_2 == 2
+                RH(1) = ks(1);
+                RH(3) = ks(2);
+            else
+                RH(1:2) = ks;
+            end
+            
+            % All permutations of RH + gamma
+            RH = RH + gamma;
             RH_part = vertcat(RH_part, RH);
             
+%             LH_part(:, single_nonzero_loc_2) = 0 % slide 78 TODO: MAKE THIS VALUE DEPENDENT ON THE SINGLE NONZERO VALUE OF OUT OF EDGE VERTEX
+%             LH = LH_part(j, :);
+%             RH = LH + gamma;
+%             RH_part = vertcat(RH_part, RH);
+%             
             % Smoothness conditions (find index of corresponding entry in
             % c_OLS and set that to -1 or b(v))
             h_vector = zeros(1, size(c_OLS_coeff, 1));
             % Left side
-            LH(2) = order; % Set
+            LH = LH_part(j, :);
+            LH(single_nonzero_loc_1) = order; % Set to order at single-nonzero-location
             LH_idx = find(ismember(c_OLS_coeff, [1, LH], 'rows'));
             h_vector(LH_idx) = -1;
             % Right side
@@ -106,20 +126,20 @@ for order = 0 : spline_cont_order
             h_vector(RH_idx) = b_v;
             
             % Fill H
-            H(j*(order+1), :) = h_vector;
+            H = vertcat(H, h_vector);
             
         end        
     end
 end
 
-%% Equality strained OLS estimation
+%% Equality constrained OLS estimation
 % TODO: Use efficient iterative solver
 Lagrangian = pinv([global_B' * global_B, H';...
-            H, zeros(num_cont_equations)]);
+            H, zeros(size(H, 1), size(H, 1))]);
 C1 = Lagrangian(1:size(H, 2), 1:size(H, 2));
 c_OLS = C1 * global_B' * Y_id;
 
-% Iterative solver
+% % Iterative solver
 % epsilon = 10^(-6);
 % lambda = ones(size(H, 1), 1);
 % c_OLS = inv(2 * global_B' * global_B + 1/epsilon * H' * H) * (2 * global_B' * Y_id - H' * lambda);
@@ -141,18 +161,18 @@ for i = 1:size(tri.ConnectivityList, 1)
     
     % Create sorted B-form regression matrix and global B-form matrix
     exponentials    = gen_exp(3, spline_poly_order);
-    sorted_B_val        = x2fx(BaryC_current, exponentials);
-    global_B_val        = blkdiag(global_B_val, sorted_B_val);
+    sorted_B_val    = x2fx(BaryC_current, exponentials);
+    global_B_val    = blkdiag(global_B_val, sorted_B_val);
           
 end
 
 
 Y_est = global_B_val * c_OLS;
-% Y_est(Y_est > 0) = 0;
-% Y_est(Y_est < -0.2) = -0.2;
+Y_est(Y_est > 0) = 0;
+Y_est(Y_est < -0.2) = -0.2;
 % % residuals = Y_est - Y_val;
 
 %% Plotting
-OLS_plotting(X_val, Y_val, Y_est, 1)
+OLS_plotting(X_val, Y_val, Y_est, 0)
 
 end

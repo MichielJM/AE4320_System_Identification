@@ -50,8 +50,8 @@ drawnow();
 % print results to disk if printfigs = 1
 if (printfigs == 1)
     fpath = sprintf('fig_F16data3DSurf');
-%     savefname = strcat(figpath, fpath);
-%     print(plotID, '-dpng', '-r300', savefname);
-%     fprintf('Printed figure to <%s>\n', savefname);
+    savefname = strcat(figpath, fpath);
+    print(plotID, '-dpng', '-r300', savefname);
+    fprintf('Printed figure to <%s>\n', savefname);
 end
 end

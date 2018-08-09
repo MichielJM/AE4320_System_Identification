@@ -104,7 +104,7 @@ acx_norm = acx ./ max(acx, 1);
 do_SimpleSimplex(X, Y, simple_simplex_order)
 
 %% Perform compplete simplex splines
-do_CompleteSimplex(X, Y, spline_poly_order, spline_cont_order, num_simplices)
+% do_CompleteSimplex(X, Y, spline_poly_order, spline_cont_order, num_simplices)
 
 
 

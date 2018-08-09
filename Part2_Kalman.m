@@ -8,7 +8,7 @@
 close all, clc, clear all
 printfigs = 0;
 showfigs = 0;
-interpolation_order = 3;
+interpolation_order = 8;
 simple_simplex_order = 2;
 spline_poly_order   = 2;
 spline_cont_order   = 1;
@@ -81,24 +81,27 @@ end
 
 %% Model validation
 % Statistical (use covariances)
-Cov = cov(theta_OLS)
+Cov = cov(theta_OLS);
 
 % Model-error based
-residual = Cm_est_val - Y_val;
+residual = Y_val - Cm_est_val;
+res_RMS = sqrt(mean(residual.^2));
 
 conf = 1.96 / sqrt(length(residual));
 [acx,lags] = xcorr(residual-mean(residual), 'coeff');
-acx_norm = acx ./ max(acx, 1);
-
-% Plot model error autocorrelation
-% figure; hold on;
-% line([lags(1), lags(end)], [conf, conf], 'Color','red','LineStyle','--')
-% line([lags(1), lags(end)], [-conf, -conf], 'Color','red','LineStyle','--')
-% plot(lags, acx_norm)
+k_0 = find(lags == 0);
+corr_test = abs(acx(k_0 + 1 : end)) / acx(k_0);
 
 % Determine "whiteness"
-% inside_bounds   = length(find(-conf < acx < conf));
-% perc_inside     = inside_bounds / length(acx) * 100
+inside_bounds = length(find(corr_test <= conf));
+perc_inside = inside_bounds / length(corr_test) * 100
+
+% Plot model error autocorrelation
+figure; hold on;
+line([lags(1), lags(end)], [conf, conf], 'Color','red','LineStyle','--')
+line([lags(1), lags(end)], [-conf, -conf], 'Color','red','LineStyle','--')
+plot(lags, acx)
+
 
 %% Perform single simplex polynomial
 do_SimpleSimplex(X, Y, simple_simplex_order)

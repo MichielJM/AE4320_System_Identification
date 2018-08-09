@@ -2,7 +2,7 @@
 
 function do_CompleteSimplex(X, Y, spline_poly_order, spline_cont_order, num_simplices)
 
-order = 0;
+order = 1;
 
 % Split data into identification and validation
 X_id    = X(2:2:end, 1:2); % Only alpha and beta (???)
@@ -20,7 +20,7 @@ step_y          = (grid_end_y - grid_start_y)/2^order;
 [x, y]  = meshgrid(grid_start_x : step_x : grid_end_x,...
                 grid_start_y : step_y : grid_end_y);
 tri     = delaunayTriangulation(x(:), y(:));
-% trimesh(tri, x, y);
+trimesh(tri, x, y);
 % figure;
 % plot(x(:), y(:), X(:, 1), X(:, 2))
 
@@ -56,12 +56,27 @@ num_cont_equations = sum(spline_poly_order+1 : -1 : spline_poly_order - spline_c
 H = zeros(num_cont_equations, size(c_OLS_coeff, 1));
 
 for order = 0 : spline_cont_order
-
+    
     for i = 1 : size(int_edges, 1)
         
+        % Find triangles and their out-of-edge vertices connected to current edge
+        triangle_IDs    = edgeAttachments(tri, int_edges(i, :));
+        vertex_IDs      = tri.ConnectivityList(triangle_IDs{:}, :);
+        vertex_ID_1     = setdiff(vertex_IDs(1, :), vertex_IDs(2, :)); % Find values in A which are not in B
+        vertex_ID_2     = setdiff(vertex_IDs(2, :), vertex_IDs(1, :)); % Find values in B which are not in A
+        vertex_cart_1   = tri.Points(vertex_ID_1, :);
+        vertex_cart_2   = tri.Points(vertex_ID_2, :);
+        % Determine barycentric coords of out-of-edge vertices wrt their
+        % own triangle and the other triangle (11 is own, 12 wrt other etc)
+        vertex_bary_11  = cartesianToBarycentric(tri, triangle_IDs{1}(1), vertex_cart_1);
+        vertex_bary_12  = cartesianToBarycentric(tri, triangle_IDs{1}(2), vertex_cart_1);
+        vertex_bary_21  = cartesianToBarycentric(tri, triangle_IDs{1}(1), vertex_cart_2);
+        vertex_bary_22  = cartesianToBarycentric(tri, triangle_IDs{1}(2), vertex_cart_2);        
+        
         % Left hand part (see lecture 6, slide 76 and onwards for steps)
+        single_nonzero_loc = find(vertex_bary_11 == 1);
         exponentials = gen_exp(3, spline_poly_order);
-        indices      = exponentials(:, 2) == order;
+        indices      = exponentials(:, single_nonzero_loc) == order;  %TODO: MAKE THIS VALUE DEPENDENT ON THE SINGLE NONZERO VALUE OF OUT OF EDGE VERTEX
         LH_part      = exponentials(indices, :);
         
         % Gamma permutations
@@ -73,7 +88,7 @@ for order = 0 : spline_cont_order
         % and create continuity matrix H
         for j = 1:size(LH_part, 1)
             
-            LH_part(:, 2) = 0; % Set second value to 0 (as specified in slide 78)
+            LH_part(:, single_nonzero_loc) = 0; % Set second value to 0 (as specified in slide 78) TODO: MAKE THIS VALUE DEPENDENT ON THE SINGLE NONZERO VALUE OF OUT OF EDGE VERTEX
             LH = LH_part(j, :);
             RH = LH + gamma;
             RH_part = vertcat(RH_part, RH);
@@ -87,7 +102,8 @@ for order = 0 : spline_cont_order
             h_vector(LH_idx) = -1;
             % Right side
             RH_idx = find(ismember(c_OLS_coeff, [2*ones(size(RH, 1), 1), RH], 'rows'));
-            h_vector(RH_idx) = 1;
+            b_v = prod(vertex_bary_21.^gamma, 2);
+            h_vector(RH_idx) = b_v;
             
             % Fill H
             H(j*(order+1), :) = h_vector;
@@ -97,15 +113,46 @@ for order = 0 : spline_cont_order
 end
 
 %% Equality strained OLS estimation
+% TODO: Use efficient iterative solver
 Lagrangian = pinv([global_B' * global_B, H';...
             H, zeros(num_cont_equations)]);
 C1 = Lagrangian(1:size(H, 2), 1:size(H, 2));
 c_OLS = C1 * global_B' * Y_id;
 
-Y_est = c_OLS * X_val;
-residuals = Y_est - Y_val;
+% Iterative solver
+% epsilon = 10^(-6);
+% lambda = ones(size(H, 1), 1);
+% c_OLS = inv(2 * global_B' * global_B + 1/epsilon * H' * H) * (2 * global_B' * Y_id - H' * lambda);
+% dif = 1;
+% for a = 1:10
+%     
+%     c_OLS_new = inv(2 * global_B' * global_B + 1/epsilon * H' * H) * 2 * global_B' * global_B * c_OLS;
+%     dif = abs(mean(mean(c_OLS_new - c_OLS)));
+%     c_OLS = c_OLS_new;
+%     
+% end
+
+global_B_val = [];
+for i = 1:size(tri.ConnectivityList, 1)
+    
+    % Get data points and their barycentric coords in current triangle
+    indices = find(IMap_val == i);
+    BaryC_current = BaryC_val(indices, :);
+    
+    % Create sorted B-form regression matrix and global B-form matrix
+    exponentials    = gen_exp(3, spline_poly_order);
+    sorted_B_val        = x2fx(BaryC_current, exponentials);
+    global_B_val        = blkdiag(global_B_val, sorted_B_val);
+          
+end
+
+
+Y_est = global_B_val * c_OLS;
+% Y_est(Y_est > 0) = 0;
+% Y_est(Y_est < -0.2) = -0.2;
+% % residuals = Y_est - Y_val;
 
 %% Plotting
-% OLS_plotting(X_val, Y_val, Y_est, 1)
+OLS_plotting(X_val, Y_val, Y_est, 1)
 
 end

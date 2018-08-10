@@ -9,8 +9,19 @@ X_id    = X(2:2:end, 1:2); % Only alpha and beta (???)
 X_val   = X(1:2:end, 1:2);
 Y_id    = Y(2:2:end);
 Y_val   = Y(1:2:end);
+% X_id = [0.2, 0.8;...
+%         0.4, 0.2;...
+%         0.8, 0.2;...
+%         0.8, 0.6];
+% Y_id = [-1; 2; 2; 1];
+% X_val = X_id;
+% Y_val = Y_id;
 
 % Define triangular grid
+% grid_start_x    = 0; %-0.2;
+% grid_end_x      = 1; %0.8;
+% grid_start_y    = 0; %-0.3;
+% grid_end_y      = 1; %0.3;
 grid_start_x    = -0.2;
 grid_end_x      = 0.8;
 grid_start_y    = -0.3;
@@ -19,10 +30,10 @@ step_x          = (grid_end_x - grid_start_x)/2^order;
 step_y          = (grid_end_y - grid_start_y)/2^order;
 [x, y]  = meshgrid(grid_start_x : step_x : grid_end_x,...
                 grid_start_y : step_y : grid_end_y);
-tri     = delaunayTriangulation(x(:), y(:));
+tri     = delaunayTriangulation(x(:), y(:), [1, 4]);
 trimesh(tri, x, y);
-% figure;
-% plot(x(:), y(:), X(:, 1), X(:, 2))
+% hold on
+% plot(X_id(:,1), X_id(:,2), 'x')
 
 % Find which data points are in which triangle
 [IMap, BaryC] = tsearchn([x(:), y(:)], tri, X_id);
@@ -31,15 +42,18 @@ trimesh(tri, x, y);
 % Loop over all triangles to determine B-form regression matrix
 c_OLS_coeff = [];
 global_B = [];
+global_indices = []
 for i = 1:size(tri.ConnectivityList, 1)
     
     % Get data points and their barycentric coords in current triangle
     indices = find(IMap == i);
+    global_indices = vertcat(global_indices, indices);
     BaryC_current = BaryC(indices, :);
     
     % Create sorted B-form regression matrix and global B-form matrix
     exponentials    = gen_exp(3, spline_poly_order);
-    sorted_B        = x2fx(BaryC_current, exponentials);
+    coefficients    = factorial(spline_poly_order) ./ prod(factorial(exponentials), 2);
+    sorted_B        = x2fx(BaryC_current, exponentials) .* coefficients';
     global_B        = blkdiag(global_B, sorted_B);
     
     % Create sorted B-coefficient vector for later reference
@@ -121,9 +135,14 @@ for order = 0 : spline_cont_order
             LH_idx = find(ismember(c_OLS_coeff, [1, LH], 'rows'));
             h_vector(LH_idx) = -1;
             % Right side
-            RH_idx = find(ismember(c_OLS_coeff, [2*ones(size(RH, 1), 1), RH], 'rows'));
+%             [triangle_IDs{:}(2)*ones(size(RH, 1), 1), RH]
+            RH_idx = find(ismember(c_OLS_coeff, [triangle_IDs{:}(1)*ones(size(RH, 1), 1), RH], 'rows'));
             b_v = prod(vertex_bary_21.^gamma, 2);
             h_vector(RH_idx) = b_v;
+            
+            if isempty(LH_idx) || isempty(RH_idx)
+                disp('ERRRRRRRORRRRRRRRR')
+            end
             
             % Fill H
             H = vertcat(H, h_vector);
@@ -137,9 +156,9 @@ end
 Lagrangian = pinv([global_B' * global_B, H';...
             H, zeros(size(H, 1), size(H, 1))]);
 C1 = Lagrangian(1:size(H, 2), 1:size(H, 2));
-c_OLS = C1 * global_B' * Y_id;
+c_OLS = C1 * global_B' * Y_id(global_indices);
 
-% % Iterative solver
+% Iterative solver
 % epsilon = 10^(-6);
 % lambda = ones(size(H, 1), 1);
 % c_OLS = inv(2 * global_B' * global_B + 1/epsilon * H' * H) * (2 * global_B' * Y_id - H' * lambda);
@@ -153,26 +172,35 @@ c_OLS = C1 * global_B' * Y_id;
 % end
 
 global_B_val = [];
+global_indices_val = [];
 for i = 1:size(tri.ConnectivityList, 1)
     
     % Get data points and their barycentric coords in current triangle
     indices = find(IMap_val == i);
+    global_indices_val = vertcat(global_indices_val, indices);
     BaryC_current = BaryC_val(indices, :);
     
     % Create sorted B-form regression matrix and global B-form matrix
     exponentials    = gen_exp(3, spline_poly_order);
-    sorted_B_val    = x2fx(BaryC_current, exponentials);
+    coefficients    = factorial(spline_poly_order) ./ prod(factorial(exponentials), 2);
+    sorted_B_val    = x2fx(BaryC_current, exponentials) .* coefficients';
     global_B_val    = blkdiag(global_B_val, sorted_B_val);
           
 end
 
 
 Y_est = global_B_val * c_OLS;
-Y_est(Y_est > 0) = 0;
-Y_est(Y_est < -0.2) = -0.2;
-% % residuals = Y_est - Y_val;
+% Y_est(Y_est > 0) = 0;
+% Y_est(Y_est < -0.2) = -0.2;
+residuals = Y_est - Y_val;
 
 %% Plotting
-OLS_plotting(X_val, Y_val, Y_est, 0)
+% OLS_plotting(X_val, Y_val, Y_est, 0)
+% TODO: make spline plotter
+figure
+tri_eval = delaunayn(X_val(global_indices_val, :));
+trisurf(tri_eval, X_val(global_indices_val, 1), X_val(global_indices_val, 2), Y_est, 'EdgeColor', 'None')
+hold on
+% plot3(X_val(global_indices_val, 1), X_val(global_indices_val, 2), Y_est, '.k');
 
 end

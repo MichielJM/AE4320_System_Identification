@@ -1,7 +1,8 @@
 % TODO: model validation, identify (at least) 5 models, clean up code
 
 function do_SimpleSimplex(X, Y, order)
-
+order = 2;
+do_coeff = 1;
 % Split data into identification and validation
 X_id    = X(2:2:end, 1:2); % Only alpha and beta (???)
 X_val   = X(1:2:end, 1:2);
@@ -24,19 +25,27 @@ TRI             = delaunayTriangulation(V);
 
 % Created sorted B-form regression matrix
 exponentials    = gen_exp(3, order);
-sorted_B        = x2fx(BaryC, exponentials);
-
+coefficients    = factorial(order) ./ prod(factorial(exponentials), 2); % not needed, OLS itself sorts it out anyways
+if do_coeff
+    sorted_B        = x2fx(BaryC, exponentials) .* coefficients';
+else
+    sorted_B        = x2fx(BaryC, exponentials);
+end
 % Perform OLS to determine B-coefficients
-c_OLS = inv(sorted_B' * sorted_B) * sorted_B' * Y_id;
+c_OLS = pinv(sorted_B' * sorted_B) * sorted_B' * Y_id
 
 %% Model evaluation
 [IMap, BaryC_val]   = tsearchn(V, TRI, X_val);
 sorted_B_val        = x2fx(BaryC_val, exponentials);
 
-Y_est = sorted_B_val * c_OLS;
+if do_coeff
+    Y_est = sorted_B_val .* coefficients' * c_OLS;
+else
+    Y_est = sorted_B_val * c_OLS;
+end
 residuals = Y_est - Y_val;
 
 
 %% Plotting
-% OLS_plotting(X_val, Y_val, Y_est, 1)
+OLS_plotting(X_val, Y_val, Y_est, 1)
 end

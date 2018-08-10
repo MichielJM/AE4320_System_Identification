@@ -97,10 +97,10 @@ inside_bounds = length(find(corr_test <= conf));
 perc_inside = inside_bounds / length(corr_test) * 100
 
 % Plot model error autocorrelation
-figure; hold on;
-line([lags(1), lags(end)], [conf, conf], 'Color','red','LineStyle','--')
-line([lags(1), lags(end)], [-conf, -conf], 'Color','red','LineStyle','--')
-plot(lags, acx)
+% figure; hold on;
+% line([lags(1), lags(end)], [conf, conf], 'Color','red','LineStyle','--')
+% line([lags(1), lags(end)], [-conf, -conf], 'Color','red','LineStyle','--')
+% plot(lags, acx)
 
 
 %% Perform single simplex polynomial

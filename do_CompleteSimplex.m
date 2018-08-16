@@ -1,8 +1,9 @@
-%% TODO: create continuity matrix H, h_vector already done but need to add b(v) instead of ones
+%% TODO: something wrong with higher order continuity probably (although H*c = 0)
+% something wrong with H indexing as well?
 
 function do_CompleteSimplex(X, Y, spline_poly_order, spline_cont_order, num_simplices)
 
-order = 1;
+order = 2;
 
 % Split data into identification and validation
 X_id    = X(2:2:end, 1:2); % Only alpha and beta (???)
@@ -30,8 +31,8 @@ step_x          = (grid_end_x - grid_start_x)/2^order;
 step_y          = (grid_end_y - grid_start_y)/2^order;
 [x, y]  = meshgrid(grid_start_x : step_x : grid_end_x,...
                 grid_start_y : step_y : grid_end_y);
-tri     = delaunayTriangulation(x(:), y(:), [1, 4]);
-trimesh(tri, x, y);
+tri     = delaunayTriangulation(x(:), y(:));
+% trimesh(tri, x, y);
 % hold on
 % plot(X_id(:,1), X_id(:,2), 'x')
 
@@ -42,7 +43,7 @@ trimesh(tri, x, y);
 % Loop over all triangles to determine B-form regression matrix
 c_OLS_coeff = [];
 global_B = [];
-global_indices = []
+global_indices = [];
 for i = 1:size(tri.ConnectivityList, 1)
     
     % Get data points and their barycentric coords in current triangle
@@ -120,29 +121,20 @@ for order = 0 : spline_cont_order
             % All permutations of RH + gamma
             RH = RH + gamma;
             RH_part = vertcat(RH_part, RH);
-            
-%             LH_part(:, single_nonzero_loc_2) = 0 % slide 78 TODO: MAKE THIS VALUE DEPENDENT ON THE SINGLE NONZERO VALUE OF OUT OF EDGE VERTEX
-%             LH = LH_part(j, :);
-%             RH = LH + gamma;
-%             RH_part = vertcat(RH_part, RH);
-%             
+                       
             % Smoothness conditions (find index of corresponding entry in
             % c_OLS and set that to -1 or b(v))
             h_vector = zeros(1, size(c_OLS_coeff, 1));
             % Left side
             LH = LH_part(j, :);
             LH(single_nonzero_loc_1) = order; % Set to order at single-nonzero-location
-            LH_idx = find(ismember(c_OLS_coeff, [1, LH], 'rows'));
+            LH_idx = find(ismember(c_OLS_coeff, [triangle_IDs{:}(1), LH], 'rows'));
             h_vector(LH_idx) = -1;
             % Right side
 %             [triangle_IDs{:}(2)*ones(size(RH, 1), 1), RH]
-            RH_idx = find(ismember(c_OLS_coeff, [triangle_IDs{:}(1)*ones(size(RH, 1), 1), RH], 'rows'));
+            RH_idx = find(ismember(c_OLS_coeff, [triangle_IDs{:}(2)*ones(size(RH, 1), 1), RH], 'rows'));
             b_v = prod(vertex_bary_21.^gamma, 2);
             h_vector(RH_idx) = b_v;
-            
-            if isempty(LH_idx) || isempty(RH_idx)
-                disp('ERRRRRRRORRRRRRRRR')
-            end
             
             % Fill H
             H = vertcat(H, h_vector);
@@ -153,10 +145,14 @@ end
 
 %% Equality constrained OLS estimation
 % TODO: Use efficient iterative solver
-Lagrangian = pinv([global_B' * global_B, H';...
+% Lagrangian = pinv([global_B' * global_B, H';...
+%             H, zeros(size(H, 1), size(H, 1))]);
+% C1 = Lagrangian(1:size(H, 2), 1:size(H, 2));
+% c_OLS = C1 * global_B' * Y_id(global_indices);
+Lagrangian = pinv([global_B(global_indices, :)' * global_B(global_indices, :), H';...
             H, zeros(size(H, 1), size(H, 1))]);
 C1 = Lagrangian(1:size(H, 2), 1:size(H, 2));
-c_OLS = C1 * global_B' * Y_id(global_indices);
+c_OLS = C1 * global_B(global_indices, :)' * Y_id(global_indices);
 
 % Iterative solver
 % epsilon = 10^(-6);
@@ -199,8 +195,9 @@ residuals = Y_est - Y_val;
 % TODO: make spline plotter
 figure
 tri_eval = delaunayn(X_val(global_indices_val, :));
-trisurf(tri_eval, X_val(global_indices_val, 1), X_val(global_indices_val, 2), Y_est, 'EdgeColor', 'None')
+% trisurf(tri_eval, X_val(:, 1), X_val(:, 2), Y_est, 'EdgeColor', 'None')
+plot3(X_val(:, 1), X_val(:, 2), Y_est, '.r')
 hold on
-% plot3(X_val(global_indices_val, 1), X_val(global_indices_val, 2), Y_est, '.k');
+plot3(X_val(:, 1), X_val(:, 2), Y_val, '.k');
 
 end

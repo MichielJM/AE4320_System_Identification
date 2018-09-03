@@ -6,13 +6,21 @@
 %   University of Technology, 2013)
 
 close all, clc, clear all
+
+%% Settings
+% interpolation orders
+interpolation_order  = 8;
+simple_simplex_order = 2;
+spline_poly_order    = 2;
+spline_cont_order    = 1;
+
+% Amount of simplices
+num_simplices_x = 2;
+num_simplices_y = 2;
+
+% Plotting and saving figures
 printfigs = 0;
 showfigs = 0;
-interpolation_order = 8;
-simple_simplex_order = 2;
-spline_poly_order   = 2;
-spline_cont_order   = 1;
-num_simplices       = 2;
 
 %% Load data and set noise statistics
 filename = 'data/F16traindata_CMabV_2018';
@@ -106,8 +114,9 @@ perc_inside = inside_bounds / length(corr_test) * 100
 %% Perform single simplex polynomial
 do_SimpleSimplex(X, Y, simple_simplex_order)
 
-%% Perform compplete simplex splines
-% do_CompleteSimplex(X, Y, spline_poly_order, spline_cont_order, num_simplices)
+%% Perform complete simplex splines
+do_CompleteSimplex(X, Y, spline_poly_order, spline_cont_order,...
+    num_simplices_x, num_simplices_y, plot_triangulation)
 
 
 

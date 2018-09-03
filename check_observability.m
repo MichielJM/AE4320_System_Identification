@@ -26,10 +26,4 @@ h = [atan(w/u) * (1 + C_alpha_up);
 % Compute rank of the observability matrix
 rank = kf_calcNonlinObsRank(f, h, x, x_0);
 
-if rank >= N_states
-    fprintf('\nObservability matrix is of full rank: the system is observable!\n');
-else
-    fprintf('\nObservability matrix is NOT of full rank: the system is NOT observable!\n');
-end
-
 end

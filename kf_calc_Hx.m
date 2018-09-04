@@ -1,10 +1,15 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% H = kf_calcDHx(x) Calculates the Jacobian of the output dynamics equation h(x,u,t) 
-%   
-%   Author: M.J. Mollema (adapted from original by C.C. de Visser, Delft
-%   University of Technology, 2013)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Hx = kf_calcDHx(t, x, U)
+function Hx = kf_calc_Hx(x, U)
+% KF_CALC_HX Calculates the Jacobian of the output dynamics equation
+% h(x,u,t) for use in the Kalman filter.
+% 
+% Inputs:
+%  - x: one-step-ahead state prediction
+%  - U: input vector
+% 
+% Output:
+%  - Hx: Jacobian of output dynamics equation
+% 
+% M.J. Mollema (adapted from C.C. de Visser, Delft) - 04.09.2018
 
     u = x(1); v = x(2); w = x(3); C = x(4);
     
@@ -29,3 +34,4 @@ function Hx = kf_calcDHx(t, x, U)
     Hx = [H00, H01, H02, H03;...
         H10, H11, H12, H13;...
         H20, H21, H22, H23];
+end

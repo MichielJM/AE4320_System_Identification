@@ -1,11 +1,17 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Function for running Iterated Extended Kalman Filter
-%
-%   Author: M.J. Mollema (adapted from original by C.C. de Visser, Delft)
-%   University of Technology, 2013)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 function [XX_k1k1, z_pred, IEKFitcount] = IEKF(U_k, Z_k, dt, stdv, stdw)
+% IEKF Function for running Iterated Extended Kalman Filter.
+% 
+% Inputs:
+%  - U_k: input vector
+%  - Z_k: measurement vector
+%  - dt: timestep
+%  - stdv: sensor noise statistics
+%  - stdw: process noise statistics
+% 
+% Output:
+%  - XX_k1k1: one-step-ahead optimal state estimation
+% 
+% M.J. Mollema (adapted from C.C. de Visser, Delft) - 04.09.2018
 
 N               = size(U_k, 2);
 epsilon         = 1e-10;
@@ -21,14 +27,12 @@ P_0     = diag(stdx_0.^2);
 
 % System noise statistics
 Ew      = [0, 0, 0, 0];
-% stdw    = [1e-3, 1e-3, 1e-3, 0];
 Q       = diag(stdw.^2);
 n       = length(stdw);
 w_k     = diag(stdw) * randn(n, N) + diag(Ew) * ones(n, N);
 
 % Measurement noise statistics
 Ev      = [0, 0, 0];
-% stdv    = [0.01, 0.0058, 0.112];
 R       = diag(stdv.^2);
 nm      = length(stdv);
 v_k     = diag(stdv) * randn(nm, N) + diag(Ev) * ones(nm, N);
@@ -36,12 +40,14 @@ v_k     = diag(stdv) * randn(nm, N) + diag(Ev) * ones(nm, N);
 G = eye(n);
 B = eye(m);
 
+% Initialise array sizes
 XX_k1k1     = zeros(n, N);
 PP_k1k1     = zeros(n, N);
 STDx_cor    = zeros(n, N);
 z_pred      = zeros(nm, N);
 IEKFitcount = zeros(N, 1);
 
+% Set first estimates
 x_k_1k_1 = Ex_0;
 P_k_1k_1 = P_0;
 
@@ -51,7 +57,7 @@ tf = dt;
 for k = 1:N
     % Prediction x(k+1|k) (integrate state eq. with one-step earlier best
     % estimate)
-    [t, x_kk_1] = rk4(@kf_calc_f, x_k_1k_1, U_k(:,k), [ti, tf]);
+    [~, x_kk_1] = rk4(@kf_calc_f, x_k_1k_1, U_k(:,k), [ti, tf]);
     
     % Predicted output z(k+1|k)
     z_kk_1      = kf_calc_h(0, x_k_1k_1, U_k(:,k));
@@ -79,7 +85,7 @@ for k = 1:N
         eta1 = eta2;
 
         % Jacobian of h(x,u)
-        Hx  = kf_calc_Hx(0, eta1, U_k(:,k));
+        Hx  = kf_calc_Hx(eta1, U_k(:,k));
 
         % The innovation matrix, P_Z(k+1|k)
         Ve  = (Hx * P_kk_1 * Hx' + R);
@@ -107,4 +113,6 @@ for k = 1:N
     XX_k1k1(:,k) = x_k_1k_1;
     PP_k1k1(:,k) = diag(P_k_1k_1);
     STDx_cor(:,k) = stdx_cor;
+end
+
 end

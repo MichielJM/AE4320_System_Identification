@@ -1,11 +1,11 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Check observability of a non-linear system using kf_calcNonlinObsRank(f, h, X, X0)
-% which uses symbolic vectors as input
-%
-% Author: M.J. Mollema
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function check_observabilty()
-% Define symbols
+% CHECK_OBSERVABILITY Script to check if the non-linear system is
+% observable using kf_calcNonlinObsRank(f, h, X, X0), which uses symbolic
+% vectors as input
+% 
+% M.J. Mollema - 03.09.2018
+
+%% Define symbols
 syms('u', 'v', 'w','C_alpha_up', 'u_dot', 'v_dot', 'w_dot')
 
 % State vector: x(t) = [u v w C_alpha_up]'

@@ -1,9 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% F = kf_calcDFx(x) Calculates the Jacobian of the system dynamics equation f(x,u,t) 
-%   
-%   Author: M.J. Mollema (adapted from original by: C.C. de Visser, Delft
-%   University of Technology, 2013)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DFx = kf_calc_Fx(t, x, u)
 % KF_CALC_FX Calculates the Jacobian of the system dynamics equation
 % f(x,u,t) for use in the Kalman filter.

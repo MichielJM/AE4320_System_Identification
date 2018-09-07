@@ -15,8 +15,6 @@ function rankObs = kf_calcNonlinObsRank(f, h, X, X0)
 
 nstates = length(X);
 nobs    = length(h);
-%F = eye(size(Fx));
-%Rank = [];
 
 Hx = simplify(jacobian(h, X));
 ObsMat = zeros(nobs*nstates, nstates);
@@ -29,7 +27,7 @@ if (rankObs >= nstates)
     fprintf('Observability matrix is of Full Rank: the state is Observable!\n');
     return;
 end
-%Obs(1,:) = Hx';
+
 LfHx = simplify(Hx * f);
 for i = 2:nstates
     tic;
@@ -47,12 +45,6 @@ for i = 2:nstates
     fprintf('Loop %d took %2.2f seconds to complete\n', i, toc);
 end
 fprintf('WARNING: Rank of Observability matrix is %d: the state is NOT OBSERVABLE!\n', rankObs);
-
-% fname = sprintf('NonLinObsMat_n%d', nstates);
-% save(fname, 'Obs');
-
-%Rank = [ Rank; H*F ];
-%r    = rank(Rank);
 
 end
 

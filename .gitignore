@@ -6,3 +6,4 @@
 *.m~
 *.fig
 *.mat
+/figures

@@ -7,13 +7,14 @@
 % 
 % M.J. Mollema - 04.09.2018
 
-close all, clc, clear all
+clc, close all
+
 
 %% Settings
 % interpolation orders
-interpolation_order  = 8;
+interpolation_order  = 2;
 simple_simplex_order = 2;
-spline_poly_order    = 10;
+spline_poly_order    = 3;
 spline_cont_order    = 2;
 
 % Amount of simplices
@@ -22,7 +23,7 @@ num_simplices_y = 2;
 
 % Plotting figures
 plot_kalman         = 0;
-plot_OLS            = 0;
+plot_OLS            = 1;
 plot_simple_simplex = 0;
 plot_triangulation  = 0; % When having high order or lots of simplices this plotting can take some time
 plot_compl_simplex  = 0;
@@ -43,22 +44,11 @@ stdw    = [1e-3, 1e-3, 1e-3, 0];
 Y_kalman = Cm';
 
 %% Ordinary least squares estimator
-do_OLS(X_kalman, Y_kalman, interpolation_order)
+do_OLS(X_kalman, Y_kalman, interpolation_order, plot_OLS)
 
 %% Perform single simplex polynomial
-do_SimpleSimplex(X_kalman, Y_kalman, simple_simplex_order)
+do_SimpleSimplex(X_kalman, Y_kalman, simple_simplex_order, plot_simple_simplex)
 
 %% Perform complete simplex splines
-do_CompleteSimplex(X_kalman, Y_kalman, spline_poly_order, spline_cont_order,...
-    num_simplices_x, num_simplices_y, plot_triangulation)
-
-
-
-
-
-
-
-
-
-
-
+% do_CompleteSimplex(X_kalman, Y_kalman, spline_poly_order, spline_cont_order,...
+%     num_simplices_x, num_simplices_y, plot_triangulation)

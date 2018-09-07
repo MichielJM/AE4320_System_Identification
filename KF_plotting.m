@@ -1,12 +1,16 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Function to plot relevant data from KF
-%
-% Author: M.J. Mollema
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [] = KF_plotting(printfigs, Z_k, z_pred, z_pred_corr, t)
-%% Settings
-figpath = 'data/'; % set the path where the figures will be printed
+function [] = KF_plotting(Z_k, z_pred, z_pred_corr, t, IEKFitcount, C_a_up)
+% KF_PLOTTING Plots the relevant things from the Kalman filter
+% 
+% Inputs:
+%  - Z_k: original measurement vector
+%  - z_pred: Kalman filtered measurement vector
+%  - z_pred_corr: Kalman filtered and bias corrected measurement vector
+%  - t: time vector
+%  - IEKFitcount: number of iterations vector for IEKF
+% 
+% Output:
+%  - None
+% M.J. Mollema - 07.09.2018
 
 %% Set variable names
 % Measured
@@ -25,44 +29,55 @@ beta_corr = z_pred_corr(2, :); % = beta_KF
 Vtot_corr = z_pred_corr(3, :); % = Vtot_KF
 
 %%   Plotting results
-
+fontsize = 16;
+last_datapoint = 1000;
 % Alpha vs Beta
 plotID = 101;
 figure(plotID);
-set(plotID, 'Position', [150 150 720 800], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'color', [1 1 1], 'PaperPositionMode', 'auto');
+set(plotID, 'defaultaxesfontsize', fontsize, 'defaulttextfontsize', fontsize, 'color', [1 1 1], 'PaperPositionMode', 'auto');
 plot(alpha_m, beta_m, 'r', alpha_KF, beta_KF, 'b', alpha_corr, beta_KF, 'g');
+pbaspect([1.6/0.6 1 1])
 view(0, 90); 
-ylabel('beta [rad]');
-xlabel('alpha [rad]');
-title('F16 CM(\alpha_m, \beta_m)');
-% print results to disk if printfigs = 1
-if (printfigs == 1)
-    fpath = sprintf('fig_alpha_vs_beta');
-    savefname = strcat(figpath, fpath);
-    print(plotID, '-dpng', '-r300', savefname);
-    fprintf('Printed figure to <%s>\n', savefname);
-end
-
+ylabel('\beta [rad]');
+xlabel('\alpha [rad]');
 
 % Alpha vs time
+plotID = 201;
+figure(plotID)
+set(plotID, 'defaultaxesfontsize', fontsize, 'defaulttextfontsize', fontsize, 'color', [1 1 1], 'PaperPositionMode', 'auto');
 subplot(3, 1, 1); hold on;
-plot(t, alpha_m, 'r')
-plot(t, alpha_KF, 'b')
-plot(t, alpha_corr, 'k')
+plot(t(1:last_datapoint), alpha_m(1:last_datapoint), 'r')
+plot(t(1:last_datapoint), alpha_KF(1:last_datapoint), 'b')
+plot(t(1:last_datapoint), alpha_corr(1:last_datapoint), 'g')
 xlabel('Time [sec]');
-ylabel('Alpha [rad]');
+ylabel('\alpha [rad]');
 
 % Beta vs time
 subplot(3, 1, 2); hold on;
-plot(t, beta_m, 'r');
-plot(t, beta_KF, 'b');
+plot(t(1:last_datapoint), beta_m(1:last_datapoint), 'r');
+plot(t(1:last_datapoint), beta_KF(1:last_datapoint), 'b');
 xlabel('Time [sec]');
-ylabel('Beta [rad]');
+ylabel('\beta [rad]');
 
 % V_tot vs time
 subplot(3 ,1, 3); hold on;
-plot(t, Vtot_m, 'r');
-plot(t, Vtot_KF, 'b');
+plot(t(1:last_datapoint), Vtot_m(1:last_datapoint), 'r');
+plot(t(1:last_datapoint), Vtot_KF(1:last_datapoint), 'b');
 xlabel('Time [sec]');
-ylabel('Vtot [m/s]');
+ylabel('V_{tot} [m/s]');
 
+% IEKF iteration count
+plotID = 301;
+figure(plotID)
+set(plotID, 'defaultaxesfontsize', fontsize, 'defaulttextfontsize', fontsize, 'color', [1 1 1], 'PaperPositionMode', 'auto');
+plot(t, IEKFitcount)
+xlabel('Time [sec]')
+ylabel('Number of iterations [-]')
+
+% Upwash coefficient
+plotID = 401;
+figure(plotID)
+set(plotID, 'defaultaxesfontsize', fontsize, 'defaulttextfontsize', fontsize, 'color', [1 1 1], 'PaperPositionMode', 'auto');
+plot(t, C_a_up)
+xlabel('Time [sec]')
+ylabel('Upwash coefficient C_{\alpha_{up}} [-]')

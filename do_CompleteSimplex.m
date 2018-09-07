@@ -15,11 +15,7 @@ function do_CompletSimplex(X, Y, spline_poly_order, spline_cont_order, ...
 %  None
 
 %% Split data into identification and validation
-% Even indices for identification, odd indices for validation
-X_id    = X(2:2:end, 1:2);
-X_val   = X(1:2:end, 1:2);
-Y_id    = Y(2:2:end);
-Y_val   = Y(1:2:end);
+[X_id, Y_id, X_val, Y_val] = split_data(X, Y, 0.5);
 
 %% Define triangular grid and plot b-coefficient and vertex locations
 [tri, x_mesh, y_mesh] = simplex_triangulation(num_triangles_x,...

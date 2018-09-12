@@ -24,25 +24,25 @@ Obsnum = subs(Obs, X, X0);
 rankObs = double(rank(Obsnum));
 fprintf('\nRank of Initial Observability matrix is %d\n', rankObs);
 if (rankObs >= nstates)
-    fprintf('Observability matrix is of Full Rank: the state is Observable!\n');
+    fprintf('Observability matrix is of full rank: the state is observable!\n');
     return;
 end
 
 LfHx = simplify(Hx * f);
 for i = 2:nstates
-    tic;
+%     tic;
     LfHx = jacobian(LfHx, X);
     Obs((i-1)*nobs+1:i*nobs,:) = LfHx;
     Obsnum = subs(Obs, X, X0);
     rankObs = double(rank(Obsnum));
-    fprintf('\t-> Rank of Observability matrix is %d\n', rankObs);
+    fprintf('\t-> Rank of observability matrix is %d\n', rankObs);
     if (rankObs >= nstates)
-        fprintf('Observability matrix is of Full Rank: the state is Observable!\n');
+        fprintf('Observability matrix is of full rank: the state is observable!\n');
         return;
     end
     LfHx = (LfHx * f);
-    time = toc;
-    fprintf('Loop %d took %2.2f seconds to complete\n', i, toc);
+%     time = toc;
+%     fprintf('Loop %d took %2.2f seconds to complete\n', i, toc);
 end
 fprintf('WARNING: Rank of Observability matrix is %d: the state is NOT OBSERVABLE!\n', rankObs);
 

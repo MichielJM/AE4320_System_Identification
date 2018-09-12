@@ -12,21 +12,22 @@ clc, close all
 
 %% Settings
 % interpolation orders
-interpolation_order  = 2;
-simple_simplex_order = 2;
+interpolation_order  = 1;
+simple_simplex_order = 1;
 spline_poly_order    = 3;
-spline_cont_order    = 2;
+spline_cont_order    = 1;
 
 % Amount of simplices
 num_simplices_x = 2;
-num_simplices_y = 2;
+num_simplices_y = 1;
 
 % Plotting figures
-plot_kalman         = 0;
-plot_OLS            = 1;
-plot_simple_simplex = 0;
-plot_triangulation  = 0; % When having high order or lots of simplices this plotting can take some time
-plot_compl_simplex  = 0;
+plot_kalman                 = 0;
+plot_OLS                    = 0;
+plot_simple_simplex         = 0;
+plot_simple_triangulation   = 0;
+plot_compl_triangulation    = 0; % When having high order or lots of simplices this plotting can take some time
+plot_compl_simplex          = 1;
 
 %% Load data and set noise statistics
 filename = 'data/F16traindata_CMabV_2018';
@@ -47,8 +48,9 @@ Y_kalman = Cm';
 do_OLS(X_kalman, Y_kalman, interpolation_order, plot_OLS)
 
 %% Perform single simplex polynomial
-do_SimpleSimplex(X_kalman, Y_kalman, simple_simplex_order, plot_simple_simplex)
+do_SimpleSimplex(X_kalman, Y_kalman, simple_simplex_order,...
+    plot_simple_simplex, plot_simple_triangulation)
 
 %% Perform complete simplex splines
-% do_CompleteSimplex(X_kalman, Y_kalman, spline_poly_order, spline_cont_order,...
-%     num_simplices_x, num_simplices_y, plot_triangulation)
+do_CompleteSimplex(X_kalman, Y_kalman, spline_poly_order, spline_cont_order,...
+    num_simplices_x, num_simplices_y, plot_compl_triangulation, plot_compl_simplex)

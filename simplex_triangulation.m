@@ -1,5 +1,5 @@
 function [tri, x, y] = simplex_triangulation(num_triangles_x, num_triangles_y,...
-    spline_poly_order, plot_triangulation)
+    spline_poly_order, plot_triangulation, X)
 % SIMPLEX_TRIANGULATION Create an even-spaced triangulation for the data
 % and generate the locations and names of all vertices and b-coefficients.
 %
@@ -9,6 +9,7 @@ function [tri, x, y] = simplex_triangulation(num_triangles_x, num_triangles_y,..
 %  - spline_poly_order: order of the polynomial spline, used to determine
 %     the amount of and location of b-coefficients
 %  - plot_triangulation: Boolean to plot or not
+%  - X: X-datapoints (for plotting)
 %     
 % Outputs:
 % - tri: MATLAB triangulation object
@@ -36,26 +37,32 @@ triangles = sort(tri.ConnectivityList, 2);
 %% Plotting
 if plot_triangulation
     
+    font_size = 16;
+    figure; hold on;
     trimesh(tri, x, y);
+    plot(X(:, 1), X(:, 2));
+    xlabel('\alpha [rad]', 'fontsize', font_size)
+    ylabel('\beta [rad]', 'fontsize', font_size)
 
     % Add labels to vertices in plot
     vertices = tri.Points;
     for i = 1:size(vertices, 1)
         vertex_label = (['v_', num2str(i - 0)]);
-        text(vertices(i, 1), vertices(i, 2), vertex_label, 'Color', 'black', 'FontSize', 14);
+        text(vertices(i, 1), vertices(i, 2), vertex_label, 'Color', 'black', 'FontSize', font_size);
     end
 
     % Add labels to triangles in plot
     for i = 1:size(triangles, 1)
         triangle_label = (['t_', num2str(i)]);
         triangle_centroid = [mean(tri.Points(triangles(i, :), 1)), mean(tri.Points(triangles(i, :), 2))];
-        text(triangle_centroid(1), triangle_centroid(2), triangle_label, 'Color', 'black', 'FontSize', 14)
+        text(triangle_centroid(1), triangle_centroid(2), triangle_label, 'Color', 'black', 'FontSize', font_size)
     end
 
     % Plot B-coefficients and labels
-    figure
+    figure;
     trimesh(tri, x, y)
     hold on
+    set(gca,'xtick',[], 'ytick', [])
     b_cart = [];
     for i = 1:size(triangles, 1)
 
